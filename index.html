@@ -1,0 +1,1694 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>App Autoregolazione</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;
+            position: fixed;
+            width: 100%;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .screen {
+            display: none;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Onboarding */
+        .onboarding {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .onboarding-icon {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            font-size: 3.5rem;
+        }
+
+        .onboarding h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .onboarding h2 {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .onboarding p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        .onboarding-dots {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: white;
+        }
+
+        .start-btn {
+            background: white;
+            color: #374151;
+            padding: 18px 50px;
+            border-radius: 35px;
+            border: none;
+            font-weight: 700;
+            font-size: 1.2rem;
+            min-height: 60px;
+            min-width: 220px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .start-btn.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            padding: 2rem 1.5rem;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .notification-icon {
+            position: relative;
+            font-size: 2rem;
+            padding: 0.8rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.2);
+            border-radius: 18px;
+            padding: 1.5rem 1rem;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Content */
+        .content {
+            padding: 2rem 1.5rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: 25px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
+        }
+
+        .section h3 {
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 1.5rem;
+            font-size: 1.4rem;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .action-btn {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            text-align: left;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.blue {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .action-btn.purple {
+            background: #f3e8ff;
+            border-color: #d8b4fe;
+        }
+
+        .action-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-title {
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .action-subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.8rem;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 1.5rem;
+            border: 2px solid #d1d5db;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            border: none;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            min-height: 65px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        /* Diary Types */
+        .diary-types {
+            margin-bottom: 2rem;
+        }
+
+        .diary-type {
+            width: 100%;
+            padding: 1.8rem;
+            border: 3px solid #e5e7eb;
+            border-radius: 20px;
+            background: white;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .diary-type.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: scale(1.02);
+        }
+
+        .diary-type-header {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .diary-type-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .diary-type-name {
+            font-weight: 700;
+            color: #374151;
+            font-size: 1.3rem;
+        }
+
+        .diary-type-desc {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-top: 0.8rem;
+            margin-left: 37px;
+            line-height: 1.4;
+        }
+
+        /* Course Cards */
+        .course-card {
+            background: white;
+            border-radius: 25px;
+            padding: 1.8rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .course-header {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .course-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .course-content {
+            flex: 1;
+        }
+
+        .course-title {
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.8rem;
+            font-size: 1.3rem;
+        }
+
+        .course-meta {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+
+        .course-stats {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+        .course-price {
+            text-align: right;
+        }
+
+        .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 1rem 0.5rem;
+            z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0.8rem;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            color: #6b7280;
+            min-width: 70px;
+            position: relative;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+
+        .nav-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .text-blue { color: #3b82f6; }
+        .text-purple { color: #8b5cf6; }
+        .text-green { color: #10b981; }
+        .text-yellow { color: #f59e0b; }
+        .text-red { color: #ef4444; }
+        .bg-blue { background-color: #3b82f6; }
+        .bg-purple { background-color: #8b5cf6; }
+        .bg-green { background-color: #10b981; }
+        .bg-yellow { background-color: #f59e0b; }
+        .bg-red { background-color: #ef4444; }
+        .bg-indigo { background-color: #6366f1; }
+        .bg-pink { background-color: #ec4899; }
+        .bg-teal { background-color: #14b8a6; }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        /* Challenge Card */
+        .challenge-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .challenge-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 1.1rem;
+            flex: 1;
+            padding-right: 1rem;
+            line-height: 1.4;
+        }
+
+        .challenge-days {
+            font-size: 1rem;
+            color: #6b7280;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .challenge-progress {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        /* Community Styles */
+        .community-challenge {
+            background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+            border-radius: 25px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .post-card {
+            background: white;
+            border-radius: 25px;
+            padding: 2rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .post-author {
+            font-weight: 700;
+            color: #374151;
+            font-size: 1.2rem;
+        }
+
+        .post-time {
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+        .post-content {
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .post-actions {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+            font-size: 1.1rem;
+            color: #6b7280;
+        }
+
+        .post-action {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        /* Profile Styles */
+        .profile-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            padding: 3rem 2rem;
+            color: white;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 3.5rem;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .profile-stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .achievement {
+            text-align: center;
+        }
+
+        .achievement-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+        }
+
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .settings-item {
+            background: white;
+            border-radius: 25px;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .settings-text {
+            font-weight: 700;
+            color: #374151;
+            font-size: 1.3rem;
+        }
+
+        /* Featured Course */
+        .featured-course {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            border-radius: 25px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .featured-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .featured-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1.5rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.5rem 1.5rem 1.5rem 4rem;
+            border: 2px solid #d1d5db;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            -webkit-appearance: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1.5rem 2rem;
+            border-radius: 15px;
+            font-weight: 700;
+            z-index: 9999;
+            max-width: 90%;
+            text-align: center;
+            color: white;
+            opacity: 0;
+            transition: all 0.4s ease;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 414px) {
+            .content { padding: 1.5rem; }
+            .section { padding: 1.5rem; }
+            .header { padding: 1.5rem; }
+        }
+
+        /* Clickable elements hover effect */
+        .clickable {
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .clickable:active {
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Onboarding Screen -->
+        <div id="onboarding" class="screen onboarding active">
+            <div class="onboarding-icon">❤️</div>
+            <h1 id="onboarding-title">Benvenuto nel tuo spazio di crescita</h1>
+            <h2 id="onboarding-subtitle">Sviluppa consapevolezza e autoregolazione</h2>
+            <p id="onboarding-description">Un percorso da dipendenza a interdipendenza, guidato ma autonomo</p>
+            <div class="onboarding-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <button class="start-btn clickable" id="start-btn">Inizia il tuo percorso</button>
+        </div>
+
+        <!-- Home Screen -->
+        <div id="home" class="screen">
+            <div class="header">
+                <div class="header-top">
+                    <div>
+                        <h1>Ciao, Utente! 👋</h1>
+                        <p>Come ti senti oggi?</p>
+                    </div>
+                    <div class="notification-icon clickable">
+                        🔔
+                        <span class="notification-badge">3</span>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">7</div>
+                        <div class="stat-label">Giorni di fila</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">Percorsi attivi</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">42</div>
+                        <div class="stat-label">Sessioni</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="section">
+                    <h3>Azioni rapide</h3>
+                    <div class="quick-actions">
+                        <div class="action-btn blue clickable" data-navigate="diary">
+                            <div class="action-icon text-blue">✏️</div>
+                            <div class="action-title">Scrivi nel diario</div>
+                            <div class="action-subtitle">Registra il tuo momento</div>
+                        </div>
+                        <div class="action-btn purple clickable" data-navigate="courses">
+                            <div class="action-icon text-purple">▶️</div>
+                            <div class="action-title">Continua percorso</div>
+                            <div class="action-subtitle">Gestione dell'Ansia</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Sfide attive</h3>
+                    <div class="challenge-card">
+                        <div class="challenge-header">
+                            <div class="challenge-title">Sfida di Maggio: 21 giorni di consapevolezza</div>
+                            <div class="challenge-days">8 giorni</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 65%"></div>
+                        </div>
+                        <div class="challenge-progress">65% completato</div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-header">
+                            <div class="challenge-title">Pratica quotidiana del respiro</div>
+                            <div class="challenge-days">3 giorni</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 80%"></div>
+                        </div>
+                        <div class="challenge-progress">80% completato</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Meditazioni consigliate</h3>
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-icon bg-teal">🧘‍♀️</div>
+                            <div class="course-content">
+                                <div class="course-title">Rilassamento Quotidiano</div>
+                                <div class="course-meta">10 min • Base</div>
+                            </div>
+                            <div class="course-price">
+                                <div class="price text-blue">€3</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diary Screen -->
+        <div id="diary" class="screen">
+            <div class="header">
+                <h1>Il tuo diario</h1>
+                <p>Connettiti con te stesso</p>
+            </div>
+
+            <div class="content">
+                <div class="diary-types">
+                    <div class="diary-type selected clickable" data-diary-type="generale">
+                        <div class="diary-type-header">
+                            <div class="diary-type-color bg-blue"></div>
+                            <div class="diary-type-name">Diario Generale</div>
+                        </div>
+                        <div class="diary-type-desc">Spazio libero per sfogo e riflessioni</div>
+                    </div>
+                    <div class="diary-type clickable" data-diary-type="consapevolezza">
+                        <div class="diary-type-header">
+                            <div class="diary-type-color bg-purple"></div>
+                            <div class="diary-type-name">Consapevolezza</div>
+                        </div>
+                        <div class="diary-type-desc">Cosa penso, cosa sento, cosa succede</div>
+                    </div>
+                    <div class="diary-type clickable" data-diary-type="progressi">
+                        <div class="diary-type-header">
+                            <div class="diary-type-color bg-green"></div>
+                            <div class="diary-type-name">Diario di Bordo</div>
+                        </div>
+                        <div class="diary-type-desc">Monitora i tuoi progressi nel percorso</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3 id="diary-section-title">Diario Generale</h3>
+                    <div id="diary-form-general">
+                        <textarea class="form-textarea" placeholder="Scrivi qui i tuoi pensieri, le tue riflessioni..."></textarea>
+                    </div>
+                    <div id="diary-form-awareness" class="hidden">
+                        <div class="form-group">
+                            <label class="form-label">Cosa penso?</label>
+                            <textarea class="form-textarea" placeholder="I tuoi pensieri in questo momento..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cosa sento?</label>
+                            <textarea class="form-textarea" placeholder="Le tue emozioni e sensazioni..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cosa sta succedendo?</label>
+                            <textarea class="form-textarea" placeholder="Il contesto e la situazione..."></textarea>
+                        </div>
+                    </div>
+                    <div id="diary-form-progress" class="hidden">
+                        <textarea class="form-textarea" placeholder="Come sta andando il tuo percorso? Quali progressi noti?"></textarea>
+                    </div>
+                    <button class="btn clickable" id="save-diary-btn">Salva nel diario</button>
+                </div>
+
+                <div class="section">
+                    <h3>Ultimi momenti</h3>
+                    <div style="border-left: 5px solid #3b82f6; padding-left: 1.5rem; margin-bottom: 1.5rem; padding-top: 1rem; padding-bottom: 1rem;">
+                        <div style="font-size: 1rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">Ieri, 18:30</div>
+                        <div style="color: #374151; font-size: 1.1rem;">Oggi mi sono sentito più calmo dopo la meditazione mattutina...</div>
+                    </div>
+                    <div style="border-left: 5px solid #8b5cf6; padding-left: 1.5rem; padding-top: 1rem; padding-bottom: 1rem;">
+                        <div style="font-size: 1rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">2 giorni fa, 21:15</div>
+                        <div style="color: #374151; font-size: 1.1rem;">Riflessione sulla giornata e sui piccoli progressi...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses Screen -->
+        <div id="courses" class="screen">
+            <div class="header">
+                <h1>Percorsi e Meditazioni</h1>
+                <p>Cresci al tuo ritmo</p>
+            </div>
+
+            <div class="content">
+                <div class="section">
+                    <div class="search-container">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Cerca percorsi...">
+                    </div>
+                </div>
+
+                <div class="featured-course">
+                    <div class="featured-header">
+                        <span class="featured-badge">Consigliato per te</span>
+                        <span style="font-size: 1.8rem;">⭐</span>
+                    </div>
+                    <h3 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 1rem;">Gestione dell'Ansia</h3>
+                    <p style="color: rgba(255,255,255,0.8); margin-bottom: 1.5rem; font-size: 1.2rem;">Basato sul tuo test d'ingresso</p>
+                    <button class="clickable" style="background: white; color: #8b5cf6; padding: 1rem 2.5rem; border: none; border-radius: 15px; font-weight: 700; font-size: 1.1rem;">
+                        Continua il percorso
+                    </button>
+                </div>
+
+                <div class="section">
+                    <h3>Tutti i percorsi</h3>
+                    
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-icon bg-red">📚</div>
+                            <div class="course-content">
+                                <div class="course-title">Gestione dell'Ansia</div>
+                                <div class="course-meta">Emozioni • 6 settimane</div>
+                                <div class="course-stats">
+                                    <span>⭐ 4.8</span>
+                                    <span>1250 studenti</span>
+                                </div>
+                            </div>
+                            <div class="course-price">
+                                <div class="price">€49</div>
+                            </div>
+                        </div>
+                        <button class="btn clickable">Inizia percorso</button>
+                    </div>
+
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-icon bg-pink">💝</div>
+                            <div class="course-content">
+                                <div class="course-title">Relazioni Consapevoli</div>
+                                <div class="course-meta">Relazioni • 8 settimane</div>
+                                <div class="course-stats">
+                                    <span>⭐ 4.9</span>
+                                    <span>890 studenti</span>
+                                </div>
+                            </div>
+                            <div class="course-price">
+                                <div class="price">€69</div>
+                            </div>
+                        </div>
+                        <button class="btn clickable">Inizia percorso</button>
+                    </div>
+
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-icon bg-yellow">⭐</div>
+                            <div class="course-content">
+                                <div class="course-title">Autostima e Fiducia</div>
+                                <div class="course-meta">Crescita • 5 settimane</div>
+                                <div class="course-stats">
+                                    <span>⭐ 4.7</span>
+                                    <span>1580 studenti</span>
+                                </div>
+                            </div>
+                            <div class="course-price">
+                                <div class="price">€39</div>
+                            </div>
+                        </div>
+                        <button class="btn clickable">Inizia percorso</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Libreria meditazioni</h3>
+                    
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-icon bg-teal">🧘‍♀️</div>
+                            <div class="course-content">
+                                <div class="course-title">Rilassamento Quotidiano</div>
+                                <div class="course-meta">10 min • Base</div>
+                            </div>
+                            <div class="course-price">
+                                <div class="price text-blue">€3</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-icon bg-blue">🌅</div>
+                            <div class="course-content">
+                                <div class="course-title">Ansia Mattutina</div>
+                                <div class="course-meta">15 min • Specialistica</div>
+                            </div>
+                            <div class="course-price">
+                                <div class="price text-blue">€5</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Community Screen -->
+        <div id="community" class="screen">
+            <div class="header">
+                <h1>Spazio Sicuro</h1>
+                <p>Condividi il tuo percorso</p>
+            </div>
+
+            <div class="content">
+                <div class="community-challenge">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.5rem;">🏆 Sfida del mese</h3>
+                    <p style="color: rgba(255,255,255,0.8); margin-bottom: 1.5rem; font-size: 1.2rem;">21 giorni di pratica quotidiana</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 1.1rem;">124 partecipanti</span>
+                        <button class="clickable" style="background: white; color: #10b981; padding: 0.8rem 1.8rem; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 700;">
+                            Partecipa
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Condivisioni recenti</h3>
+                    
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="avatar bg-purple">M</div>
+                            <div>
+                                <div class="post-author">Maria</div>
+                                <div class="post-time">2 ore fa</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            Giorno 7 della sfida! Oggi ho notato come la respirazione consapevole mi aiuti 
+                            davvero a gestire i momenti di stress. Grazie a tutti per il supporto! 💙
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action clickable" data-action="like">
+                                <span>❤️</span>
+                                <span>12</span>
+                            </div>
+                            <div class="post-action clickable">💬 Rispondi</div>
+                        </div>
+                    </div>
+
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="avatar bg-blue">L</div>
+                            <div>
+                                <div class="post-author">Luca</div>
+                                <div class="post-time">5 ore fa</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            Qualcuno ha consigli per gestire l'ansia prima di una presentazione importante? 
+                            Ho completato il modulo 3 del percorso ma vorrei sentire le vostre esperienze.
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action clickable" data-action="like">
+                                <span>❤️</span>
+                                <span>8</span>
+                            </div>
+                            <div class="post-action clickable">💬 3 risposte</div>
+                        </div>
+                    </div>
+
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="avatar bg-green">S</div>
+                            <div>
+                                <div class="post-author">Sofia</div>
+                                <div class="post-time">1 giorno fa</div>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            Milestone raggiunta! 🎉 Ho completato il mio primo percorso completo. 
+                            La sezione sulla psicosomatica è stata una rivelazione. Ora passo al livello successivo!
+                        </div>
+                        <div class="post-actions">
+                            <div class="post-action clickable" data-action="like">
+                                <span>❤️</span>
+                                <span>25</span>
+                            </div>
+                            <div class="post-action clickable">💬 7 risposte</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <textarea class="form-textarea" id="community-textarea" placeholder="Condividi i tuoi progressi o fai una domanda alla community..."></textarea>
+                    <button class="btn clickable" id="share-post-btn" style="margin-top: 1.5rem;">Condividi</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Screen -->
+        <div id="profile" class="screen">
+            <div class="profile-header">
+                <div class="profile-avatar">👤</div>
+                <h1 style="font-size: 1.8rem; font-weight: bold;">Utente</h1>
+                <p style="color: rgba(255,255,255,0.8); font-size: 1.2rem;">Membro dal Maggio 2024</p>
+            </div>
+
+            <div class="content" style="margin-top: -2rem;">
+                <div class="section">
+                    <h3>I tuoi progressi</h3>
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <div class="stat-value text-blue">127</div>
+                            <div style="font-size: 1.1rem; color: #6b7280;">Giorni attivo</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="stat-value text-purple">3</div>
+                            <div style="font-size: 1.1rem; color: #6b7280;">Percorsi completati</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="stat-value text-green">89</div>
+                            <div style="font-size: 1.1rem; color: #6b7280;">Sessioni diario</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="stat-value text-yellow">42</div>
+                            <div style="font-size: 1.1rem; color: #6b7280;">Meditazioni</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Traguardi raggiunti</h3>
+                    <div class="achievements-grid">
+                        <div class="achievement">
+                            <div class="achievement-icon" style="background: #fef3c7;">🏆</div>
+                            <div style="font-size: 1rem; color: #6b7280;">Primo percorso</div>
+                        </div>
+                        <div class="achievement">
+                            <div class="achievement-icon" style="background: #dbeafe;">📅</div>
+                            <div style="font-size: 1rem; color: #6b7280;">30 giorni</div>
+                        </div>
+                        <div class="achievement">
+                            <div class="achievement-icon" style="background: #e9d5ff;">👥</div>
+                            <div style="font-size: 1rem; color: #6b7280;">Community attiva</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-list">
+                    <div class="settings-item clickable" data-action="settings">
+                        <span class="settings-text">🔔 Notifiche</span>
+                        <span style="color: #9ca3af; font-size: 1.5rem;">❯</span>
+                    </div>
+                    <div class="settings-item clickable" data-action="settings">
+                        <span class="settings-text">🔒 Privacy</span>
+                        <span style="color: #9ca3af; font-size: 1.5rem;">❯</span>
+                    </div>
+                    <div class="settings-item clickable" data-action="settings">
+                        <span class="settings-text">💬 Supporto</span>
+                        <span style="color: #9ca3af; font-size: 1.5rem;">❯</span>
+                    </div>
+                    <div class="settings-item clickable" data-action="share">
+                        <span class="settings-text">📱 Condividi app</span>
+                        <span style="color: #9ca3af; font-size: 1.5rem;">❯</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active clickable" data-navigate="home">
+                <div class="nav-icon">🏠</div>
+                <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item clickable" data-navigate="diary">
+                <div class="nav-icon">✏️</div>
+                <span class="nav-label">Diario</span>
+            </div>
+            <div class="nav-item clickable" data-navigate="courses">
+                <div class="nav-icon">📚</div>
+                <span class="nav-label">Percorsi</span>
+            </div>
+            <div class="nav-item clickable" data-navigate="community">
+                <div class="nav-icon">👥</div>
+                <span class="nav-label">Community</span>
+            </div>
+            <div class="nav-item clickable" data-navigate="profile">
+                <div class="nav-icon">👤</div>
+                <span class="nav-label">Profilo</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 App Autoregolazione avviata');
+        
+        // Global state
+        let currentScreen = 'onboarding';
+        let currentStep = 0;
+        let selectedDiaryType = 'generale';
+        let onboardingTimer;
+
+        const onboardingSteps = [
+            {
+                title: "Benvenuto nel tuo spazio di crescita",
+                subtitle: "Sviluppa consapevolezza e autoregolazione",
+                description: "Un percorso da dipendenza a interdipendenza, guidato ma autonomo"
+            },
+            {
+                title: "Il tuo diario digitale",
+                subtitle: "Sempre con te, ogni giorno",
+                description: "Tre tipi di diario per accompagnarti: generico, consapevolezza e progressi"
+            },
+            {
+                title: "Percorsi su misura",
+                subtitle: "Scegli il tuo cammino",
+                description: "Ansia, relazioni, autostima, psicosomatica - percorsi creati da professionisti"
+            }
+        ];
+
+        // Utility functions
+        function showToast(message, type = 'success') {
+            const existingToasts = document.querySelectorAll('.toast');
+            existingToasts.forEach(toast => toast.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        function vibrate(pattern = 50) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        // Navigation function
+        function navigateToScreen(screenId) {
+            console.log('📱 Navigazione verso:', screenId);
+            
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                targetScreen.scrollTop = 0;
+                console.log('✅ Schermata attivata:', screenId);
+            } else {
+                console.error('❌ Schermata non trovata:', screenId);
+                return;
+            }
+
+            // Update navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            
+            const activeNav = document.querySelector(`[data-navigate="${screenId}"]`);
+            if (activeNav) {
+                activeNav.classList.add('active');
+            }
+            
+            currentScreen = screenId;
+            vibrate();
+        }
+
+        // Onboarding functions
+        function startOnboarding() {
+            updateOnboarding();
+            scheduleNextStep();
+        }
+
+        function updateOnboarding() {
+            const step = onboardingSteps[currentStep];
+            
+            document.getElementById('onboarding-title').textContent = step.title;
+            document.getElementById('onboarding-subtitle').textContent = step.subtitle;
+            document.getElementById('onboarding-description').textContent = step.description;
+
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentStep);
+            });
+
+            const startBtn = document.getElementById('start-btn');
+            if (currentStep === onboardingSteps.length - 1) {
+                startBtn.classList.add('show');
+            }
+        }
+
+        function scheduleNextStep() {
+            if (currentStep < onboardingSteps.length - 1) {
+                onboardingTimer = setTimeout(() => {
+                    currentStep++;
+                    updateOnboarding();
+                    scheduleNextStep();
+                }, 4000);
+            }
+        }
+
+        function startApp() {
+            if (onboardingTimer) {
+                clearTimeout(onboardingTimer);
+            }
+            navigateToScreen('home');
+            vibrate([100, 50, 100]);
+        }
+
+        // Diary functions
+        function selectDiaryType(type, element) {
+            console.log('📝 Selezione tipo diario:', type);
+            
+            document.querySelectorAll('.diary-type').forEach(t => t.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedDiaryType = type;
+
+            const forms = {
+                'diary-form-general': type === 'generale',
+                'diary-form-awareness': type === 'consapevolezza',
+                'diary-form-progress': type === 'progressi'
+            };
+
+            Object.keys(forms).forEach(formId => {
+                const form = document.getElementById(formId);
+                if (form) {
+                    forms[formId] ? form.classList.remove('hidden') : form.classList.add('hidden');
+                }
+            });
+
+            const typeNames = {
+                'generale': 'Diario Generale',
+                'consapevolezza': 'Consapevolezza',
+                'progressi': 'Diario di Bordo'
+            };
+            
+            document.getElementById('diary-section-title').textContent = typeNames[type];
+            vibrate();
+        }
+
+        function saveDiary() {
+            let hasContent = false;
+            
+            if (selectedDiaryType === 'generale') {
+                const textarea = document.querySelector('#diary-form-general textarea');
+                hasContent = textarea && textarea.value.trim();
+            } else if (selectedDiaryType === 'consapevolezza') {
+                const textareas = document.querySelectorAll('#diary-form-awareness textarea');
+                hasContent = Array.from(textareas).some(ta => ta.value.trim());
+            } else if (selectedDiaryType === 'progressi') {
+                const textarea = document.querySelector('#diary-form-progress textarea');
+                hasContent = textarea && textarea.value.trim();
+            }
+
+            if (hasContent) {
+                showToast('✅ Diario salvato con successo!', 'success');
+                document.querySelectorAll('textarea').forEach(ta => ta.value = '');
+                vibrate([100, 50, 100]);
+            } else {
+                showToast('⚠️ Scrivi qualcosa prima di salvare!', 'error');
+                vibrate([200, 100, 200]);
+            }
+        }
+
+        // Community functions
+        function likePost(element) {
+            const heart = element.querySelector('span');
+            if (heart && heart.textContent === '❤️') {
+                heart.style.transform = 'scale(1.5)';
+                heart.style.color = '#ef4444';
+                setTimeout(() => {
+                    heart.style.transform = 'scale(1)';
+                    heart.style.color = '';
+                }, 300);
+                
+                const countSpan = element.querySelector('span:last-child');
+                if (countSpan) {
+                    const currentCount = parseInt(countSpan.textContent) || 0;
+                    countSpan.textContent = currentCount + 1;
+                }
+                vibrate();
+            }
+        }
+
+        function sharePost() {
+            const textarea = document.getElementById('community-textarea');
+            if (textarea && textarea.value.trim()) {
+                showToast('✅ Post condiviso nella community!', 'success');
+                textarea.value = '';
+                vibrate([100, 50, 100]);
+            } else {
+                showToast('⚠️ Scrivi qualcosa prima di condividere!', 'error');
+                vibrate([200, 100, 200]);
+            }
+        }
+
+        // Profile functions
+        function shareApp() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'App Autoregolazione',
+                    text: 'Scopri questa app per la crescita personale! 🧘‍♀️',
+                    url: window.location.href
+                }).then(() => {
+                    showToast('📱 App condivisa!', 'success');
+                }).catch(() => {
+                    fallbackShare();
+                });
+            } else {
+                fallbackShare();
+            }
+        }
+
+        function fallbackShare() {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showToast('📋 Link copiato!', 'success');
+                });
+            } else {
+                showToast('📱 Usa il menu del browser per condividere!', 'success');
+            }
+        }
+
+        // Event handlers setup
+        function setupEventHandlers() {
+            console.log('🔧 Configurazione event handlers');
+            
+            // Start button
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) {
+                startBtn.addEventListener('click', startApp);
+                startBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    startApp();
+                });
+            }
+
+            // Navigation items
+            document.querySelectorAll('[data-navigate]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const screen = this.getAttribute('data-navigate');
+                    if (screen) {
+                        navigateToScreen(screen);
+                    }
+                });
+                
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    const screen = this.getAttribute('data-navigate');
+                    if (screen) {
+                        navigateToScreen(screen);
+                    }
+                });
+            });
+
+            // Diary type selection
+            document.querySelectorAll('[data-diary-type]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const type = this.getAttribute('data-diary-type');
+                    selectDiaryType(type, this);
+                });
+                
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    const type = this.getAttribute('data-diary-type');
+                    selectDiaryType(type, this);
+                });
+            });
+
+            // Save diary button
+            const saveDiaryBtn = document.getElementById('save-diary-btn');
+            if (saveDiaryBtn) {
+                saveDiaryBtn.addEventListener('click', saveDiary);
+                saveDiaryBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    saveDiary();
+                });
+            }
+
+            // Share post button
+            const sharePostBtn = document.getElementById('share-post-btn');
+            if (sharePostBtn) {
+                sharePostBtn.addEventListener('click', sharePost);
+                sharePostBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    sharePost();
+                });
+            }
+
+            // Like posts
+            document.querySelectorAll('[data-action="like"]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    likePost(this);
+                });
+                
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    likePost(this);
+                });
+            });
+
+            // Settings and share
+            document.querySelectorAll('[data-action="settings"]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showToast('⚙️ Impostazioni aperte!', 'success');
+                });
+                
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    showToast('⚙️ Impostazioni aperte!', 'success');
+                });
+            });
+
+            document.querySelectorAll('[data-action="share"]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    shareApp();
+                });
+                
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    shareApp();
+                });
+            });
+
+            console.log('✅ Event handlers configurati');
+        }
+
+        // Initialize app
+        function initApp() {
+            console.log('🚀 Inizializzazione app');
+            
+            startOnboarding();
+            setupEventHandlers();
+            
+            // Prevent bounce scrolling
+            document.body.addEventListener('touchmove', function(e) {
+                if (e.target === document.body) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Prevent double-tap zoom
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(e) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            console.log('✅ App inizializzata');
+        }
+
+        // Start the app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                const activeScreen = document.querySelector('.screen.active');
+                if (activeScreen) {
+                    activeScreen.scrollTop = 0;
+                }
+            }, 100);
+        });
+
+        console.log('📱 App Autoregolazione caricata');
+    </script>
+</body>
+</html>
